@@ -1,4 +1,4 @@
-#include "Arduino.h"
+#include <Arduino.h>
 
 #include "DofData.h"
 
@@ -51,7 +51,7 @@ template <class StreamType> class DofHandler {
      * Closes the stream's connections (calls end() on the stream).
      */
     void end();
-	
+  
     /**
      * Marks the DofHandler as open. This allows the stream to be opened
      * after it has been passed into the DofHandler, but without needing to open
