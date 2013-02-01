@@ -53,39 +53,23 @@
   #define MOTOR_RIGHT_RAW_OFFSET 0
 #endif
 
-// PWM(motor) = (thrust + MOTOR_motor_THRUST_A) / MOTOR_motor_THRUST_B;
-
-#ifndef MOTOR_FRONT_THRUST_A
-  #define MOTOR_FRONT_THRUST_A 54
+#ifndef MOTOR_FRONT_THRUST_OFFSET
+  #define MOTOR_FRONT_THRUST_OFFSET 0
 #endif
 
-#ifndef MOTOR_FRONT_THRUST_B
-  #define MOTOR_FRONT_THRUST_B 184.93
+#ifndef MOTOR_BACK_THRUST_OFFSET
+  #define MOTOR_BACK_THRUST_OFFSET 0
 #endif
 
-#ifndef MOTOR_RIGHT_THRUST_A
-  #define MOTOR_RIGHT_THRUST_A 14.33
+#ifndef MOTOR_LEFT_THRUST_OFFSET
+  #define MOTOR_LEFT_THRUST_OFFSET 0
 #endif
 
-#ifndef MOTOR_RIGHT_THRUST_B
-  #define MOTOR_RIGHT_THRUST_B 158.48
+#ifndef MOTOR_RIGHT_THRUST_OFFSET
+  #define MOTOR_RIGHT_THRUST_OFFSET 0
 #endif
 
-#ifndef MOTOR_BACK_THRUST_A
-  #define MOTOR_BACK_THRUST_A 16.73
-#endif
 
-#ifndef MOTOR_BACK_THRUST_B
-  #define MOTOR_BACK_THRUST_B 161.9
-#endif
-
-#ifndef MOTOR_LEFT_THRUST_A
-  #define MOTOR_LEFT_THRUST_A 34.722
-#endif
-
-#ifndef MOTOR_LEFT_THRUST_B
-  #define MOTOR_LEFT_THRUST_B 174.17
-#endif
 
 #define MOTOR_FRONT_I 0
 #define MOTOR_RIGHT_I 1
@@ -221,6 +205,8 @@ class MotorController {
     boolean programmingMode;
 #endif
 };
+
+byte calculateMotorPWM(byte motor, uint16_t thrust);
 
 MotorController::MotorController() {
   pinMode(MOTOR_FRONT_PIN, OUTPUT);
@@ -448,31 +434,31 @@ void MotorController::addMotorSpeed(byte motors, short speed) {
 void MotorController::setMotorThrust(byte motors, uint16_t thrust) {
   double pwm;
   if (motors & MOTOR_FRONT) {
-    pwm = (thrust + MOTOR_FRONT_THRUST_A) / MOTOR_FRONT_THRUST_B;
+    pwm = (thrust > 0 ? calculateMotorPWM(MOTOR_FRONT, thrust + MOTOR_FRONT_THRUST_OFFSET) + MOTOR_FRONT_RAW_OFFSET : MOTOR_ARM_VALUE);
     setMotorRaw(MOTOR_FRONT, pwm);
     motorSpeeds[MOTOR_FRONT_I] = (pwm >= MOTOR_MIN_SPEED_VALUE ? map(pwm, MOTOR_MIN_SPEED_VALUE, MOTOR_MAX_SPEED_VALUE, 0, 255) : 0);
   }
   
   if (motors & MOTOR_BACK) {
-    pwm = (thrust + MOTOR_BACK_THRUST_A) / MOTOR_BACK_THRUST_B;
+    pwm = (thrust > 0 ? calculateMotorPWM(MOTOR_BACK, thrust + MOTOR_BACK_THRUST_OFFSET) + MOTOR_BACK_RAW_OFFSET : MOTOR_ARM_VALUE);
     setMotorRaw(MOTOR_BACK, pwm);
     motorSpeeds[MOTOR_BACK_I] = (pwm >= MOTOR_MIN_SPEED_VALUE ? map(pwm, MOTOR_MIN_SPEED_VALUE, MOTOR_MAX_SPEED_VALUE, 0, 255) : 0);
   }
   
   if (motors & MOTOR_LEFT) {
-    pwm = (thrust + MOTOR_LEFT_THRUST_A) / MOTOR_LEFT_THRUST_B;
+    pwm = (thrust > 0 ? calculateMotorPWM(MOTOR_LEFT, thrust + MOTOR_LEFT_THRUST_OFFSET) + MOTOR_LEFT_RAW_OFFSET : MOTOR_ARM_VALUE);
     setMotorRaw(MOTOR_LEFT, pwm);
     motorSpeeds[MOTOR_LEFT_I] = (pwm >= MOTOR_MIN_SPEED_VALUE ? map(pwm, MOTOR_MIN_SPEED_VALUE, MOTOR_MAX_SPEED_VALUE, 0, 255) : 0);
   }
   
   if (motors & MOTOR_RIGHT) {
-    pwm = (thrust + MOTOR_RIGHT_THRUST_A) / MOTOR_RIGHT_THRUST_B;
+    pwm = (thrust > 0 ? calculateMotorPWM(MOTOR_RIGHT, thrust + MOTOR_RIGHT_THRUST_OFFSET) + MOTOR_RIGHT_RAW_OFFSET : MOTOR_ARM_VALUE);
     setMotorRaw(MOTOR_RIGHT, pwm);
     motorSpeeds[MOTOR_RIGHT_I] = (pwm >= MOTOR_MIN_SPEED_VALUE ? map(pwm, MOTOR_MIN_SPEED_VALUE, MOTOR_MAX_SPEED_VALUE, 0, 255) : 0);
   }
 }
 
-uint16_t MotorController::getMotorThrust(byte motor) {
+/*uint16_t MotorController::getMotorThrust(byte motor) {
   double thrust = 0;
   if (motor == MOTOR_FRONT) {
     thrust = motorRaw[MOTOR_FRONT_I] * MOTOR_FRONT_THRUST_B - MOTOR_FRONT_THRUST_A;
@@ -485,7 +471,7 @@ uint16_t MotorController::getMotorThrust(byte motor) {
   }
   
   return (uint16_t)thrust;
-}
+}*/
 
 #ifdef MOTOR_PROGRAMMING_ENABLED
 
@@ -528,7 +514,19 @@ void MotorController::exitProgramming() {
     delay(5000);
   }
 }
-
 #endif // MOTOR_PROGRAMMING_ENABLED
+
+byte calculateMotorPWM(byte motor, uint16_t thrust) {
+  if (motor==MOTOR_FRONT) {
+    return constrain(thrust * 0.0607224 + 112.2789, MOTOR_ARM_VALUE, MOTOR_MAX_SPEED_VALUE);
+  }else if (motor==MOTOR_BACK) {
+    return constrain(thrust * 0.058644 + 112.8434, MOTOR_ARM_VALUE, MOTOR_MAX_SPEED_VALUE);
+  }else if (motor==MOTOR_LEFT) {
+    return constrain(thrust * 0.057294 + 112.0955, MOTOR_ARM_VALUE, MOTOR_MAX_SPEED_VALUE);
+  }else if (motor==MOTOR_RIGHT) {
+    return constrain(thrust * 0.054008 + 127.976, MOTOR_ARM_VALUE, MOTOR_MAX_SPEED_VALUE);
+  }
+  return 0;
+}
 
 #endif // Double include protection

@@ -191,7 +191,7 @@ int32_t PID::getPid(int32_t error, unsigned long now, float scaler) {
   }
 
   // Compute integral component if time has elapsed
-  if (/*(fabs(_ki) > 0) &&*/ (dt > 0)) {
+  if ((fabs(_ki) > 0) && (dt > 0)) {
     /*_integrator += (error * _ki) * scaler * delta_time;
     if (_integrator < -_imax) {
       _integrator = -_imax;
@@ -231,7 +231,7 @@ void PID::resetI() {
   _first_sample_time = 0;
 }
 
-inline int _pid_wrap(int value, int min, int max) {
+int _pid_wrap(int value, int min, int max) {
   int range = max - min + 1;
 
   if (value < min)
